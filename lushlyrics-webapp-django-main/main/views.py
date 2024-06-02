@@ -5,6 +5,9 @@ from .models import playlist_user
 from django.urls.base import reverse
 from django.contrib.auth import authenticate,login,logout
 from youtube_search import YoutubeSearch
+from django.contrib import messages
+from django.db import IntegrityError
+from django.contrib.auth.decorators import login_required
 import json
 # import cardupdate
 
@@ -13,6 +16,7 @@ import json
 f = open('card.json', 'r')
 CONTAINER = json.load(f)
 
+@login_required
 def default(request):
     global CONTAINER
 
@@ -26,9 +30,9 @@ def default(request):
     return render(request, 'player.html',{'CONTAINER':CONTAINER, 'song':song})
 
 
-
+@login_required
 def playlist(request):
-    cur_user = playlist_user.objects.get(username = request.user)
+    cur_user = User.objects.get(username = request.user)
     try:
       song = request.GET.get('song')
       song = cur_user.playlist_song_set.get(song_title=song)
@@ -43,7 +47,7 @@ def playlist(request):
     # print(list(playlist_row)[0].song_title)
     return render(request, 'playlist.html', {'song':song,'user_playlist':user_playlist})
 
-
+@login_required
 def search(request):
   if request.method == 'POST':
 
@@ -61,7 +65,7 @@ def search(request):
 
 
 
-
+@login_required
 def add_playlist(request):
     cur_user = playlist_user.objects.get(username = request.user)
 
@@ -72,3 +76,60 @@ def add_playlist(request):
         cur_user.playlist_song_set.create(song_title=request.POST['title'],song_dur=request.POST['duration'],
         song_albumsrc = song__albumsrc,
         song_channel=request.POST['channel'], song_date_added=request.POST['date'],song_youtube_id=request.POST['songid'])
+
+def register(request):
+   if request.method == 'POST':
+      username = request.POST.get('username')
+      password = request.POST.get('password')
+      email = request.POST.get('email')
+      password_conf = request.POST.get('confirm-password')
+
+      if password == password_conf:
+         if User.objects.filter(username=username).exists():
+            messages.error(request,'User already exists.')
+            return render(request,'signup.html')
+         elif User.objects.filter(email=email).exists():
+            messages.error(request,'Email already exists.')
+         else:
+            try:
+              user = User.objects.create(username=username,email=email)
+              user.set_password(password)
+              user.save();
+              login(request,user)
+              return redirect(default)
+            except IntegrityError:
+               messages.error(request,'There was an error creating the user')
+      else:
+         messages.error(request,'Password did not match.')
+   return render(request,'signup.html')
+
+
+def loguser(request):
+   if request.method == 'POST':
+      username_or_email= request.POST.get('username')
+      password = request.POST.get('password')
+
+      if User.objects.filter(email=username_or_email).exists():
+         email = username_or_email
+         user = authenticate(request,email=email,password=password)
+         
+         if user is not None:
+            login(request,user)
+            return redirect(default)
+         else:
+            messages.error(request,'Wrong password or email.')
+      elif User.objects.filter(username=username_or_email).exists():
+         username = username_or_email
+         user = authenticate(request,username=username,password=password)
+         
+         if user is not None:
+            login(request,user)
+            return redirect(default)
+         else:
+            messages.error(request,'Wrong password or email.')   
+   return render(request,'login.html')
+
+def logout_user(request):
+   logout(request)
+   return redirect('login')
+   
