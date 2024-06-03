@@ -8,6 +8,7 @@ from youtube_search import YoutubeSearch
 from django.contrib import messages
 from django.db import IntegrityError
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.views import PasswordResetView
 import json
 # import cardupdate
 
@@ -110,8 +111,8 @@ def loguser(request):
       password = request.POST.get('password')
 
       if User.objects.filter(email=username_or_email).exists():
-         email = username_or_email
-         user = authenticate(request,email=email,password=password)
+         username= User.objects.filter(email=username_or_email)
+         user = authenticate(username=username[0],password=password)
          
          if user is not None:
             login(request,user)
@@ -128,8 +129,14 @@ def loguser(request):
          else:
             messages.error(request,'Wrong password or email.')   
    return render(request,'login.html')
-
+@login_required
 def logout_user(request):
    logout(request)
    return redirect('login')
+
+class MyPasswordResetView(PasswordResetView):
+    
+    template_name = 'password_reset_form.html'
+    email_template_name = 'password_reset_email.html'  
+
    

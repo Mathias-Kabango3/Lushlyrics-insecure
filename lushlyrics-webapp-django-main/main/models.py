@@ -1,9 +1,10 @@
 from django.db import models
+from django.contrib.auth.models import User
 
 
 # Create your models here.
 class playlist_user(models.Model):
-    username = models.CharField(max_length=200)
+    username = models.ForeignKey(User,on_delete=models.CASCADE)# change here
 
     def __str__(self):
         return f'Username = {self.username}, Liked Songs = {list(self.playlist_song_set.all())}'

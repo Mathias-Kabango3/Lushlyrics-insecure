@@ -99,7 +99,13 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
-
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'your_smtp_server'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'your_email'
+EMAIL_HOST_PASSWORD = 'your_password'
+DEFAULT_FROM_EMAIL = 'webmaster@yourdomain.com'
 
 # Internationalization
 # https://docs.djangoproject.com/en/3.0/topics/i18n/
